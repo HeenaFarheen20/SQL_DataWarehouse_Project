@@ -1,3 +1,5 @@
+####Insert data from Bronze layer to silver layer one by one (Will clean the data between these two layer)--
+##First Cutomer_Info Table
 Insert into [Silver].[crm_cust_info](
    cst_id,
    cst_key,
@@ -30,5 +32,37 @@ from [Bronze].[crm_cust_info]
 where cst_id is not null)t
 where flag_last = 1;
 
-
 Select * from [Silver].[crm_cust_info];
+--------------------------------------------------------------------------------------------------------------
+## Second Product Info Table
+
+Insert into [Silver].[crm_prd_info](
+prd_id,
+cat_id,
+prd_key,
+prd_nm,
+prd_cost,
+prd_line,
+prd_start_dt,
+prd_end_dt 
+)
+Select 
+prd_id,
+Replace(SUBSTRING(prd_key ,1,5), '-','_') as cat_id,
+SUBSTRING(prd_key, 7, len(prd_key)) as prd_key,
+prd_nm,
+Isnull(prd_cost, 0) as prd_cost,
+Case when UPPER(Trim(prd_line)) = 'R' Then 'Road'
+     when UPPER(Trim(prd_line)) = 'M' Then 'Mountain'
+	 when UPPER(Trim(prd_line)) = 'S' Then 'Other sales'
+	 when UPPER(Trim(prd_line)) = 'T' Then 'Touring'
+	 else 'N/A'
+End as prd_line,
+Cast(prd_start_dt as Date) as prd_start_dt,
+Cast(lead(prd_start_dt) over(partition by prd_key order by prd_start_dt)- 1 as Date) as prd_end_dt 
+from [Bronze].[crm_prd_info];
+
+Select * from [Silver].[crm_prd_info];
+------------------------------------------------------------------------------------------------------------
+
+
