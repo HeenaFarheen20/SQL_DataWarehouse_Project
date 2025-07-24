@@ -65,4 +65,96 @@ from [Bronze].[crm_prd_info];
 Select * from [Silver].[crm_prd_info];
 ------------------------------------------------------------------------------------------------------------
 
+Third Table Customer_Sales_detail
+
+Select 
+sls_ord_num,
+sls_prd_key,
+sls_cust_id,
+CASE WHEN sls_order_dt = 0 OR LEN(sls_order_dt) != 8 Then NULL
+     ELSE CAST(CAST(sls_order_dt as VARCHAR) as DATE)
+END as sls_order_dt,
+CASE WHEN sls_ship_dt = 0 OR LEN(sls_ship_dt) != 8 Then NULL
+     ELSE CAST(CAST(sls_ship_dt as VARCHAR) as DATE)
+END as sls_ship_dt,
+CASE WHEN sls_due_dt = 0 OR LEN(sls_due_dt) != 8 Then NULL
+     ELSE CAST(CAST(sls_due_dt as VARCHAR) as DATE)
+END as sls_due_dt,
+CASE WHEN sls_sales IS NULL OR sls_sales <=0 OR sls_sales != sls_quantity * ABS(sls_price)
+     THEN sls_quantity * ABS(sls_price)
+  ELSE sls_sales
+END AS sls_sales,
+sls_quantity,
+CASE WHEN sls_price IS NULL OR sls_price <=0
+     THEN sls_sales / NULLIF(sls_quantity, 0)
+	 ELSE sls_price
+END AS sls_price
+from Bronze.crm_sales_details
+
+---Where sls_ord_num != TRIM(sls_ord_num)--
+--Where sls_prd_key NOT IN (Select sls_prd_key From [Silver].[crm_prd_info])--
+--Where sls_cust_id NOT IN (Select sls_cust_id From [Silver].[crm_cust_info])--
+
+
+--Check Invalid date For sls_order_Date
+Select 
+NULLIF(sls_order_dt , 0) sls_order_dt
+from Bronze.crm_sales_details 
+Where sls_order_dt <= 0 
+OR LEN(sls_order_dt) != 8
+OR sls_order_dt > 20500101 
+OR sls_order_dt < 19000101
+
+----Check Invalid Date for Sales Ship date
+Select 
+NULLIF(sls_ship_dt , 0) sls_ship_dt
+from Bronze.crm_sales_details 
+Where sls_ship_dt <= 0 
+OR LEN(sls_ship_dt) != 8
+OR sls_ship_dt > 20500101 
+OR sls_ship_dt < 19000101
+
+----Check Invalid Date for Sales Due date
+Select 
+NULLIF(sls_due_dt , 0) sls_due_dt
+from Bronze.crm_sales_details 
+Where sls_due_dt <= 0 
+OR LEN(sls_due_dt) != 8
+OR sls_due_dt > 20500101 
+OR sls_due_dt < 19000101
+
+---Check for Invalid Dates Orders
+Select 
+* 
+from Bronze.crm_sales_details
+WHERE sls_order_dt > sls_ship_dt OR sls_order_dt > sls_due_dt
+
+
+--Check Data Consistency Between: SAles, Quantity, Price
+Select DISTINCT
+sls_sales,
+sls_quantity,
+sls_price
+from Bronze.crm_sales_details
+Where sls_sales != sls_price * sls_quantity 
+OR sls_sales IS NULL OR sls_quantity IS NULL OR sls_price IS NULL
+OR sls_sales <= 0 OR sls_quantity <= 0 OR sls_price <= 0
+order BY sls_sales, sls_quantity, sls_price;
+
+Select DISTINCT  
+sls_sales as old_sales,
+sls_quantity,
+sls_price as old_price,
+CASE WHEN sls_sales IS NULL OR sls_sales <=0 OR sls_sales != sls_quantity * ABS(sls_price)
+     THEN sls_quantity * ABS(sls_price)
+  ELSE sls_sales
+END AS sls_sales,
+CASE WHEN sls_price IS NULL OR sls_price <=0
+     THEN sls_sales / NULLIF(sls_quantity, 0)
+	 ELSE sls_price
+END AS sls_price
+from Bronze.crm_sales_details
+ORDER BY 1,2,3,4,5
+
+
 
