@@ -67,6 +67,17 @@ Select * from [Silver].[crm_prd_info];
 
 Third Table Customer_Sales_detail
 
+Insert Into Silver.crm_sales_details (
+sls_ord_num,
+sls_prd_key,
+sls_cust_id,
+sls_order_dt,
+sls_ship_dt,
+sls_due_dt,
+sls_sales,
+sls_quantity,
+sls_price
+)
 Select 
 sls_ord_num,
 sls_prd_key,
@@ -89,8 +100,10 @@ CASE WHEN sls_price IS NULL OR sls_price <=0
      THEN sls_sales / NULLIF(sls_quantity, 0)
 	 ELSE sls_price
 END AS sls_price
-from Bronze.crm_sales_details
+from Bronze.crm_sales_details;
 
+Select * from [Silver].[crm_sales_details];
+----------------------------------------------------------------------------------
 ---Where sls_ord_num != TRIM(sls_ord_num)--
 --Where sls_prd_key NOT IN (Select sls_prd_key From [Silver].[crm_prd_info])--
 --Where sls_cust_id NOT IN (Select sls_cust_id From [Silver].[crm_cust_info])--
@@ -155,6 +168,6 @@ CASE WHEN sls_price IS NULL OR sls_price <=0
 END AS sls_price
 from Bronze.crm_sales_details
 ORDER BY 1,2,3,4,5
-
+---------------------------------------------------------------------------------------
 
 
