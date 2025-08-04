@@ -1,4 +1,5 @@
-####Insert data from Bronze layer to silver layer one by one (Will clean the data between these two layer)--
+####Insert data from Bronze layer to silver layer one by one (Will clean the data between these two layer, So I have put the 
+transformation as well here)--
 ---------------------------------------------------------------------------------------------
 --First Cutomer_Info Table
 Print '>> Truncating Table: Silver.crm_cust_Info
