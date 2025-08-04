@@ -1,5 +1,9 @@
 ####Insert data from Bronze layer to silver layer one by one (Will clean the data between these two layer)--
-##First Cutomer_Info Table
+---------------------------------------------------------------------------------------------
+--First Cutomer_Info Table
+Print '>> Truncating Table: Silver.crm_cust_Info
+Truncate Table [Silver].[crm_cust_info];
+Print '>> Inserting Data Into: Silver.crm_cust_Info
 Insert into [Silver].[crm_cust_info](
    cst_id,
    cst_key,
@@ -35,7 +39,9 @@ where flag_last = 1;
 Select * from [Silver].[crm_cust_info];
 --------------------------------------------------------------------------------------------------------------
 ## Second Product Info Table
-
+Print '>> Truncating Table: Silver.crm_prd_info
+Truncate Table [Silver].[crm_prd_info];
+Print '>> Inserting Data Into: Silver.crm_prd_info
 Insert into [Silver].[crm_prd_info](
 prd_id,
 cat_id,
@@ -66,7 +72,9 @@ Select * from [Silver].[crm_prd_info];
 ------------------------------------------------------------------------------------------------------------
 
 Third Table Customer_Sales_detail
-
+Print '>> Truncating Table: Silver.crm_sales_details
+Truncate Table [Silver].[crm_sales_details];
+Print '>> Inserting Data Into: Silver.crm_sales_details
 Insert Into Silver.crm_sales_details (
 sls_ord_num,
 sls_prd_key,
@@ -169,5 +177,92 @@ END AS sls_price
 from Bronze.crm_sales_details
 ORDER BY 1,2,3,4,5
 ---------------------------------------------------------------------------------------
+Fourth Table ERP Customer TAble
+Print '>> Truncating Table: Silver.erp_cust_az12
+Truncate Table [Silver].[erp_cust_az12];
+Print '>> Inserting Data Into: Silver.erp_cust_az12
+Insert into [Silver].[erp_cust_az12](
+CID,
+BDATE,
+GEN
+)
+Select 
+CASE WHEN CID like 'NAS%' Then SUBSTRING(CID, 4, Len(CID))
+     Else CID
+End as CID,
+CASE WHEN BDATE > GETDATE() Then NULL -----Set future Birthdates as NULL
+     Else BDATE
+End as BDATE,
+Case when UPPER(TRim(GEN)) IN ('F', 'FEMALE') THEN 'Female'
+      when UPPER(TRim(GEN)) IN ('M' ,'MALE') THEN 'Male'
+	  Else 'N/A'
+End as GEN
+from [Bronze].[erp_cust_az12];
+--------------
+Check Outranged Date of Birth--
+Select BDATE 
+from [Bronze].[erp_cust_az12]
+Where BDATE < '1924 -01-01' OR BDATE > GETDATE();
 
+Checking the Gender inappropriate data and Normalise them.
+Select Distinct(GEN),
+ Case when UPPER(TRim(GEN)) IN ('F', 'FEMALE') THEN 'Female'
+      when UPPER(TRim(GEN)) IN ('M' ,'MALE') THEN 'Male'
+	  Else 'N/A'
+End as GEN
+from [Bronze].[erp_cust_az12];
+---------------------------------------------------------------------------------------------------------------
+Fifth Table ERP Customer Location
+Print '>> Truncating Table: Silver.erp_loc_a101
+Truncate Table [Silver].[erp_loc_a101];
+Print '>> Inserting Data Into: Silver.erp_loc_a101
+Insert Into [Silver].[erp_loc_a101](
+CID, 
+CNTRY
+)
+Select 
+Replace(CID, '-', '') CID,
+Case when TRIM(CNTRY) = 'DE' Then 'Germany'
+     when TRIM(CNTRY) IN ('US' , 'USA') Then 'United States'
+	 when TRIM(CNTRY) = '' OR CNTRY is NULL Then 'N/A'
+	 Else TRIM(CNTRY)
+End as CNTRY
+from [Bronze].[erp_loc_a101];
 
+--Data Standardrized and Consistency of country column--
+Select Distinct CNTRY,
+Case when TRIM(CNTRY) = 'DE' Then 'Germany'
+     when TRIM(CNTRY) IN ('US' , 'USA') Then 'United States'
+	 when TRIM(CNTRY) = '' OR CNTRY is NULL Then 'N/A'
+	 Else TRIM(CNTRY)
+End as CNTRY
+from [Bronze].[erp_loc_a101];
+---where Replace(CID, '-', '') not in 
+----(Select cst_key from [Silver].[crm_cust_info]);
+
+-----------------------------------------------------------------------------------------------------------
+Sixth Table ERP Category 
+Print '>> Truncating Table: Silver.erp_px_cat_g1v2
+Truncate Table [Silver].[erp_px_cat_g1v2];
+Print '>> Inserting Data Into: Silver.erp_px_cat_g1v2
+Insert Into [Silver].[erp_px_cat_g1v2](
+ID, 
+CAT, 
+SUBCAT, 
+MAINTENANCE
+)
+Select 
+ID,
+CAT,
+SUBCAT,
+MAINTENANCE
+from [Bronze].[erp_px_cat_g1v2];
+
+--Check for Unwanted Space
+SElect * from [Bronze].[erp_px_cat_g1v2]
+where CAT != TRIM(CAT) OR SUBCAT != TRIM(SUBCAT) OR MAINTENANCE != TRIM(MAINTENANCE);
+
+--Check Data Consistency & Standardrization
+SELECT Distinct
+MAINTENANCE
+from [Bronze].[erp_px_cat_g1v2];
