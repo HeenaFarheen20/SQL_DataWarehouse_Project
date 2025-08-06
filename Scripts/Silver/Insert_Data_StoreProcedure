@@ -1,5 +1,16 @@
-----Insert data from Bronze layer to silver layer one by one (Will clean the data between these two layer)--
----------------------------------------------------------------------------------------------
+*/
+==================================================================
+Store Procedure - Load Silver Layer(Bronze layer -> Silver Layer)
+==================================================================
+Scpirt Purpose:
+This stored Procedure performs the ETL (Extract, Transform , Load) process to
+populate the 'Silver' schema tables from the 'bronze' schema.
+Actions Performed;
+- Truncate Silver tables
+- Inserts transformed and cleansed data from Bronze into Silver tables.
+=======================================================================
+*/
+
 
 Create OR Alter Procedure Silver.Load_Silver AS
 BEGIN
