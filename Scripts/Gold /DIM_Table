@@ -1,1 +1,37 @@
+Create view gold.dim_customers as
+Select 
+    ROW_NUMBER() OVER (Order by cst_id) as Customer_key, 
+	ci.cst_id as Customer_id,
+	ci.cst_key as Customer_number,
+	ci.cst_firstname as First_name,
+	ci.cst_lastname as last_name,
+	la.CNTRY as Country,
+	ci.cst_marital_status as Martial_status,
+	CASE when ci.cst_gndr != 'n/a' Then ci.cst_gndr -- CRM is the MAster for gender
+          else coalesce(ca.gen, 'n/a')
+	End as Gender,
+	ca.BDATE as Birthdate,
+	ci.cst_create_date as Create_date
+	from Silver.crm_cust_info ci
+	left join Silver.erp_cust_az12 ca
+	on ci.cst_key = ca.CID
+	left join Silver.erp_loc_a101 la
+	on ci.cst_key = la.CID;
+
+Select * from Gold.dim_customers;
+
+
+--- Transformation------------------
+Select Distinct 
+ci.cst_gndr,
+ca.gen,
+CASE when ci.cst_gndr != 'n/a' Then ci.cst_gndr
+     else coalesce(ca.gen, 'n/a')
+	End as new_gen
+from Silver.crm_cust_info ci
+	left join Silver.erp_cust_az12 ca
+	on ci.cst_key = ca.CID
+	left join Silver.erp_loc_a101 la
+	on ci.cst_key = la.CID
+order by 1,2;
 
