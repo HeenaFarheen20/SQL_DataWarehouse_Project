@@ -35,3 +35,45 @@ from Silver.crm_cust_info ci
 	on ci.cst_key = la.CID
 order by 1,2;
 
+create view gold.dim_products as
+Select 
+ROW_NUMBER() over(order by pn.prd_start_dt, pn.prd_key) as product_key,
+pn.prd_id as product_id,
+pn.prd_key as product_number,
+pn.prd_nm as product_name,
+pn.cat_id as category_id,
+pc.CAT as category,
+pc.SUBCAT as subcategory,
+pc.MAINTENANCE as maintenance,
+pn.prd_cost as cost,
+pn.prd_line as product_line,
+pn.prd_start_dt as start_date
+from 
+Silver.crm_prd_info pn
+left join
+Silver.erp_px_cat_g1v2 pc
+on pn.cat_id = pc.ID
+where prd_end_dt is null ----Filter out all historical data;
+
+----Transformation
+Select prd_key, count(*) From(
+Select 
+pn.prd_id as product_id,
+pn.prd_key as product_number,
+pn.prd_nm as product_name,
+pn.cat_id as category_id,
+pc.CAT as category,
+pc.SUBCAT as subcategory,
+pc.MAINTENANCE as maintenance,
+pn.prd_cost as cost,
+pn.prd_line as product_line,
+pn.prd_start_dt as start_date
+from 
+Silver.crm_prd_info pn
+left join
+Silver.erp_px_cat_g1v2 pc
+on pn.cat_id = pc.ID
+where prd_end_dt is null ----Filter out all historical data
+)t group by prd_key 
+Having count(*) >1;
+
