@@ -77,3 +77,33 @@ where prd_end_dt is null ----Filter out all historical data
 )t group by prd_key 
 Having count(*) >1;
 
+Select * from gold.dim_products;
+
+create view gold.fact_sales as
+Select 
+sd.sls_ord_num as order_number,
+pr.product_key,
+cu.Customer_key,
+sd.sls_order_dt as order_date,
+sd.sls_ship_dt as ship_date,
+sd.sls_due_dt as due_date,
+sd.sls_sales as sales,
+sd.sls_quantity as quantity,
+sd.sls_price as price
+from Silver.crm_sales_details sd
+left join gold.dim_products pr
+on sd.sls_prd_key = pr.product_number
+left join gold.dim_customers cu
+on sd.sls_cust_id = cu.Customer_id;
+
+Select * from gold.fact_sales;
+
+
+---- foriegn key integrity (Dimensions)
+Select * from gold.fact_sales f
+left join gold.dim_customers c
+on c.Customer_key = f.Customer_key
+left join gold.dim_products p
+on p.product_key = f.product_key
+where p.product_key is null;
+
