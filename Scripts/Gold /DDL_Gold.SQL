@@ -1,6 +1,29 @@
+/*
+===============================================================================
+DDL Script: Create Gold Views
+===============================================================================
+Script Purpose:
+    This script creates views for the Gold layer in the data warehouse. 
+    The Gold layer represents the final dimension and fact tables (Star Schema)
+
+    Each view performs transformations and combines data from the Silver layer 
+    to produce a clean, enriched, and business-ready dataset.
+
+Usage:
+    - These views can be queried directly for analytics and reporting.
+===============================================================================
+*/
+
+-- =============================================================================
+-- Create Dimension: gold.dim_customers
+-- =============================================================================
+IF OBJECT_ID('gold.dim_customers', 'V') IS NOT NULL
+    DROP VIEW gold.dim_customers;
+GO
+
 Create view gold.dim_customers as
 Select 
-    ROW_NUMBER() OVER (Order by cst_id) as Customer_key, 
+    ROW_NUMBER() OVER (Order by cst_id) as Customer_key---Surrogate key, 
 	ci.cst_id as Customer_id,
 	ci.cst_key as Customer_number,
 	ci.cst_firstname as First_name,
@@ -17,6 +40,7 @@ Select
 	on ci.cst_key = ca.CID
 	left join Silver.erp_loc_a101 la
 	on ci.cst_key = la.CID;
+GO
 
 Select * from Gold.dim_customers;
 
@@ -34,6 +58,14 @@ from Silver.crm_cust_info ci
 	left join Silver.erp_loc_a101 la
 	on ci.cst_key = la.CID
 order by 1,2;
+
+
+-- =============================================================================
+-- Create Dimension: gold.dim_products
+-- =============================================================================
+IF OBJECT_ID('gold.dim_products', 'V') IS NOT NULL
+    DROP VIEW gold.dim_products;
+GO
 
 create view gold.dim_products as
 Select 
@@ -53,7 +85,8 @@ Silver.crm_prd_info pn
 left join
 Silver.erp_px_cat_g1v2 pc
 on pn.cat_id = pc.ID
-where prd_end_dt is null ----Filter out all historical data;
+where prd_end_dt is null; ----Filter out all historical data
+GO
 
 ----Transformation
 Select prd_key, count(*) From(
@@ -79,6 +112,13 @@ Having count(*) >1;
 
 Select * from gold.dim_products;
 
+-- =============================================================================
+-- Create Fact Table: gold.fact_sales
+-- =============================================================================
+IF OBJECT_ID('gold.fact_sales', 'V') IS NOT NULL
+    DROP VIEW gold.fact_sales;
+GO
+
 create view gold.fact_sales as
 Select 
 sd.sls_ord_num as order_number,
@@ -95,6 +135,7 @@ left join gold.dim_products pr
 on sd.sls_prd_key = pr.product_number
 left join gold.dim_customers cu
 on sd.sls_cust_id = cu.Customer_id;
+GO
 
 Select * from gold.fact_sales;
 
